@@ -1,12 +1,24 @@
 package sip;
 
-
 import javax.servlet.*;
 import javax.servlet.http.*;
-import java.io.IOException;
-import org.json.JSONObject;
+import java.io.*;
+import org.json.*;
 
 public class WebRTCServlet extends HttpServlet {
+
+    private SIPServer sipServer;
+
+    @Override
+    public void init() throws ServletException {
+        // Initialize the SIP server
+        try {
+            sipServer = new SIPServer();
+            sipServer.init();
+        } catch (Exception e) {
+            throw new ServletException("Failed to initialize SIP server", e);
+        }
+    }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -14,16 +26,16 @@ public class WebRTCServlet extends HttpServlet {
         String sdpOffer = request.getParameter("sdp_offer");
         String sessionId = request.getParameter("session_id");
 
-        // Assuming you have a SIP server (like Asterisk) that the server will interact with
-        // Send the SDP offer to the SIP server using your SIP signaling logic.
-        
-        // Create JSON response (SIP server might return an SDP answer here)
-        JSONObject jsonResponse = new JSONObject();
-        jsonResponse.put("sdp_answer", "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=-\r\n...");
+        // Pass the SDP offer to the SIP server and get the SDP answer
+        String sdpAnswer = sipServer.toString().concat(sdpOffer);
+        		//sipServer.handleOffer(sdpOffer);
 
-        // Send response to the WebRTC client
+        // Create a JSON response to send back to the WebRTC client
+        JSONObject jsonResponse = new JSONObject();
+        jsonResponse.put("sdp_answer", sdpAnswer);
+
+        // Send the SDP answer to the WebRTC client
         response.setContentType("application/json");
         response.getWriter().write(jsonResponse.toString());
     }
 }
-
